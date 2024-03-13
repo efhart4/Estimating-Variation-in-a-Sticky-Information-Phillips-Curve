@@ -389,7 +389,7 @@ information set, the median forecast is provided starting with <span class="math
 date has been formatted and the yearly forecasts have been removed.</p>
 <p>The documentation from “<a href="https://www.philadelphiafed.org/-/media/frbp/assets/surveys-and-data/survey-of-professional-forecasters/spf-documentation.pdf?la=en&amp;hash=F2D73A2CE0C3EA90E71A363719588D25" class="uri">https://www.philadelphiafed.org/-/media/frbp/assets/surveys-and-data/survey-of-professional-forecasters/spf-documentation.pdf?la=en&amp;hash=F2D73A2CE0C3EA90E71A363719588D25</a>”.
 Here for reference.</p>
-<pre class="r"><code>E_P = read_excel(&quot;/Users/modelt/Documents/Research/Estimating Shifts in attention /Data/E_PGDP.xlsx&quot;);
+<pre class="r"><code>E_P = read_excel(&quot;E_PGDP.xlsx&quot;);
 E_P$DATE &lt;- as.Date(as.yearqtr(paste0(E_P$YEAR, &quot;-&quot;, E_P$QUARTER)))
 E_P = transform(E_P, PGDP6 = as.numeric(PGDP6))
 #head(subset(E_P, select = c(DATE, PGDP1, PGDP2, PGDP3, PGDP4, PGDP5, PGDP6)))
@@ -451,7 +451,7 @@ output gap. <span class="math display">\[\begin{equation*}E_i \alpha
 \end{equation*}\]</span> s.t. <span class="math display">\[\begin{equation*}E_i\Delta y_t = log(E_{i}(Y_t))-
 log(E_{i}(Y_{t-1}))\end{equation*}\]</span> <span class="math display">\[\begin{equation*}\Delta y^N_t = log(Y_t^N)
 -log(Y_{t-1}^N) \end{equation*}\]</span></p>
-<pre class="r"><code>E_RGDP = read_excel(&quot;/Users/modelt/Documents/Research/Estimating Shifts in attention /Data/Median_RGDP_Level.xlsx&quot;);
+<pre class="r"><code>E_RGDP = read_excel(&quot;Median_RGDP_Level.xlsx&quot;);
 E_RGDP$DATE &lt;- as.Date(as.yearqtr(paste0(E_RGDP$YEAR, &quot;-&quot;, E_RGDP$QUARTER)))
 E_RGDP = transform(E_RGDP, RGDP6 = as.numeric(RGDP6))
 
@@ -502,7 +502,7 @@ head(expectations_change_output,6)</code></pre>
 <h3>Change in Natural Rate</h3>
 <p>Real Potential Gross Domestic Product (GDPPOT) Billions of Chained
 2012 Dollars, Not Seasonally Adjusted, Frequency:Quarterly</p>
-<pre class="r"><code>PRGDP = read_excel(&quot;/Users/modelt/Documents/Research/Estimating Shifts in attention /Data/PRGDP.xls&quot;);
+<pre class="r"><code>PRGDP = read_excel(&quot;PRGDP.xls&quot;);
 PRGDP$DATE &lt;- as.Date(as.yearqtr(PRGDP$observation_date))
 #head(subset(PRGDP, select = c(DATE, GDPPOT)))
 Y = nrow(PRGDP)</code></pre>
@@ -518,7 +518,7 @@ delta_PRGDP = c(NA, diff(PRGDP$GDPPOT,1))
 <h3>Output Gap</h3>
 <p>Real Gross Domestic Product (GDPC1) Billions of Chained 2012 Dollars,
 Seasonally Adjusted Annual Rate, Frequency:Quarterly</p>
-<pre class="r"><code>RGDP = read_excel(&quot;/Users/modelt/Documents/Research/Estimating Shifts in attention /Data/RGDP.xls&quot;)
+<pre class="r"><code>RGDP = read_excel(&quot;RGDP.xls&quot;)
 #head(RGDP)
 RGDP$DATE &lt;- as.Date(as.yearqtr(RGDP$observation_date))
 #head(subset(RGDP, select = c(DATE, GDPC1 )))
@@ -537,7 +537,7 @@ Output_Gap = data.frame(
 <h3>Inflation</h3>
 <p>Gross Domestic Product: Implicit Price Deflator (GDPDEF) Index
 2012=100, Seasonally Adjusted, Frequency:Quarterly</p>
-<pre class="r"><code>GDPDEF=read_excel(&quot;/Users/modelt/Documents/Research/Estimating Shifts in attention /Data/GDPDEF.xls&quot;);
+<pre class="r"><code>GDPDEF=read_excel(&quot;GDPDEF.xls&quot;);
 GDPDEF$DATE &lt;- as.Date(as.yearqtr(GDPDEF$observation_date))
 GDPDEF$log_GDPDEF=log(GDPDEF$GDPDEF)
 GDPDEF$inflation = c(NA, diff(GDPDEF$log_GDPDEF, lag = 1))
