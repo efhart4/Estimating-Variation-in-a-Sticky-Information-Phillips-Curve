@@ -1,0 +1,273 @@
+---
+title: "Data Preparation"
+output: html_document
+date: "2023-03-02"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(warning = FALSE, message = FALSE) 
+library(readxl) # Read Excel file (duh)
+library(zoo) # for as.quarter
+library(MASS)# for multivariate normal dist.
+
+# library(tidyverse) # read_csv
+```
+# {.tabset .tabset-fade .tabset-pills}
+
+
+  
+## Format
+The focal point of our study is the Phillips Curve incorporating sticky information. The regression equation depicts inflation on the left-hand side, while the right-hand side encompasses the potentially endogenous variable – the output gap $x_t$, along with a spectrum of inflation expectations and output expectations. To estimate the model, we utilize a set of instruments denoted as $Z_t$. The required data for model estimation can be summarized as follows:
+\begin{equation*}\pi_t = f(x_t, E\pi_t, E\Delta x_t).
+\end{equation*}
+and
+\begin{equation*} Z_t = c(1,x_{t-1},x_{t-2},x_{t-3},E_{t-1}\pi_{t+1}) 
+\end{equation*}
+
+
+## Inflation Expectation Data
+A subset of the independent variables are historical expectations of inflation. Forecasts for the quarterly level of the chain-weighted GDP price index can be used to construct an expectation of inflation using the following formula:
+
+\begin{equation*}E_{t-1} \pi_i = log(E_{t-1} P_i) - log(E_{t-1} P_{i-1}). \end{equation*}
+The GDP price index forecasts are the median from the survey of Professional Forecasters. Collected from the Philadelphia Federal Reserve website. This data set runs from 1968-10-01 to 2022-10-01. The file includes 9 columns, two are dedicated to the date, two are annual average forecasts. The other 6 contain our expectation data. For a row labeled time i, we have the expectations using information set i-1. Using this information set, the median forecast is provided starting with $P_{i-1}$ ending with $P_{i+4}$. The data is provided below, the date has been formatted and the yearly forecasts have been removed. 
+
+The documentation from "https://www.philadelphiafed.org/-/media/frbp/assets/surveys-and-data/survey-of-professional-forecasters/spf-documentation.pdf?la=en&hash=F2D73A2CE0C3EA90E71A363719588D25". Here for reference.
+
+
+
+```{r}
+
+E_P = read_excel("E_PGDP.xlsx");
+E_P$DATE <- as.Date(as.yearqtr(paste0(E_P$YEAR, "-", E_P$QUARTER)))
+E_P = transform(E_P, PGDP6 = as.numeric(PGDP6))
+#head(subset(E_P, select = c(DATE, PGDP1, PGDP2, PGDP3, PGDP4, PGDP5, PGDP6)))
+Y=nrow(E_P)
+```
+
+\begin{equation*}E_{t-1} \pi_t = log(E_{t-1} P_t) - log(E_{t-1} P_{t-1}). \end{equation*}
+```{r}
+inflation  = log(E_P$PGDP2) -log(E_P$PGDP1)
+```
+
+
+\begin{equation*}E_{t-1} \pi_{t+1} = log(E_{t-1} P_{t+1}) - log(E_{t-1} P_{t}) \end{equation*}
+```{r}
+pi_plus1  = log(E_P$PGDP3) -log(E_P$PGDP2)
+```
+
+
+\begin{equation*}E_{t-1} \pi_{t+2}= log(E_{t-1} P_{t+2}) - log(E_{t-1} P_{t+1}). \end{equation*}
+```{r}
+pi_plus2 = log(E_P$PGDP4) -log(E_P$PGDP3)
+```
+
+
+\begin{equation*}E_{t-1} \pi_{t+3}=  log(E_{t-1} P_{t+3}) - log(E_{t-1} P_{t+2}). \end{equation*}
+```{r}
+pi_plus3  = log(E_P$PGDP5) -log(E_P$PGDP4)
+```
+
+
+\begin{equation*}E_{t-1} \pi_{t+4}= log(E_{t-1} P_{t+4}) - log(E_{t-1} P_{t+3}). \end{equation*}
+```{r}
+pi_plus4 = log(E_P$PGDP6) -log(E_P$PGDP5)
+```
+
+Now notice that we want to align the different columns according to the date on expected inflation, not the information set. We must shift the columns using NA values. 
+```{r}
+expectations_inflation= data.frame(
+t = E_P$DATE,
+expectations_inflation_less1 = c(NA,inflation)[1:Y],
+expectations_inflation_less2 = c(NA,NA,pi_plus1)[1:Y],
+expectations_inflation_less3 = c(NA,NA,NA,pi_plus2)[1:Y],
+expectations_inflation_less4 = c(NA,NA,NA,NA,pi_plus3)[1:Y],
+expectations_inflation_less5 = c(NA,NA,NA,NA,NA,pi_plus4)[1:Y]
+)
+head(expectations_inflation,6)
+```
+Example:
+
+In the code: expectations_inflation_less5  at time 1970-01-01 is equal to ```log(E_P$PGDP6[1]) -log(E_P$PGDP5[1])```, where ```E_P$DATE[1] = 1968-10-01```.
+This implies 
+\begin{equation*}E_{1968-10-01} \pi_{1970-01-01} = log(E_{1968-10-01} P_{1970-01-01}) - log(E_{1968-10-01} P_{1969-10-01}). \end{equation*}
+
+
+
+
+## Output Gap Expectation Data
+The Real GDP forecasts are the median from the survey of Professional Forecasters, I then assume that the forecasters know the natural rate of output. 
+
+The expected change in the output gap can be broken into two pieces given our simplifying assumption. The expectation data will form the first part. While the second part will use the actual change in the output gap.
+\begin{equation*}E_i \alpha \Delta x_t  = \alpha*(E_i\Delta y_t - \Delta y^N_t) \end{equation*}
+s.t.
+\begin{equation*}E_i\Delta y_t = log(E_{i}(Y_t))- log(E_{i}(Y_{t-1}))\end{equation*}
+\begin{equation*}\Delta y^N_t = log(Y_t^N) -log(Y_{t-1}^N) \end{equation*}
+
+
+```{r}
+
+E_RGDP = read_excel("Median_RGDP_Level.xlsx");
+E_RGDP$DATE <- as.Date(as.yearqtr(paste0(E_RGDP$YEAR, "-", E_RGDP$QUARTER)))
+E_RGDP = transform(E_RGDP, RGDP6 = as.numeric(RGDP6))
+
+#head(subset(E_RGDP, select = c(DATE, RGDP1, RGDP2, RGDP3, RGDP4, RGDP5, RGDP6)))
+Y=nrow(E_RGDP)
+```
+
+\begin{equation*}E_{t-1} \Delta y_t = log(E_{t-1}(Y_t))- log(E_{t-1}(Y_{t-1})) \end{equation*}
+```{r}
+delta_y  = log(E_RGDP$RGDP2) -log(E_RGDP$RGDP1)
+```
+
+
+\begin{equation*} E_{t-1}\Delta y_{t+1} = log(E_{t-1}(Y_{t+1}))- log(E_{t-1}(Y_{t}))  \end{equation*}
+```{r}
+delta_y_plus1  = log(E_RGDP$RGDP3) -log(E_RGDP$RGDP2)
+```
+
+
+\begin{equation*} E_{t-1}\Delta y_{t+2} = log(E_{t-1}(Y_{t+2}))- log(E_{t-1}(Y_{t+1}))  \end{equation*}
+```{r}
+delta_y_plus2 = log(E_RGDP$RGDP4) -log(E_RGDP$RGDP3)
+```
+
+
+\begin{equation*} E_{t-1}\Delta y_{t+3} = log(E_{t-1}(Y_{t+3}))- log(E_{t-1}(Y_{t+2}))  \end{equation*}
+```{r}
+delta_y_plus3  = log(E_RGDP$RGDP5) -log(E_RGDP$RGDP4)
+```
+
+
+\begin{equation*} E_{t-1}\Delta y_{t+4} = log(E_{t-1}(Y_{t+4}))- log(E_{t-1}(Y_{t+3}))  \end{equation*}
+```{r}
+delta_y_plus4 = log(E_RGDP$RGDP6) -log(E_RGDP$RGDP5)
+```
+
+Now notice that we want to align the different columns according to the date on expected inflation, not the information set. We must shift the columns using NA values. 
+```{r}
+expectations_change_output= data.frame(
+t = E_RGDP$DATE,
+expectations_change_output_less1 = c(NA,delta_y)[1:Y],
+expectations_change_output_less2 = c(NA,NA,delta_y_plus1)[1:Y],
+expectations_change_output_less3 = c(NA,NA,NA,delta_y_plus2)[1:Y],
+expectations_change_output_less4 = c(NA,NA,NA,NA,delta_y_plus3)[1:Y],
+expectations_change_output_less5 = c(NA,NA,NA,NA,NA,delta_y_plus4)[1:Y]
+)
+head(expectations_change_output,6)
+```
+
+## Realized Data
+### Change in Natural Rate
+Real Potential Gross Domestic Product (GDPPOT)
+Billions of Chained 2012 Dollars, Not Seasonally Adjusted, Frequency:Quarterly
+```{r}
+PRGDP = read_excel("PRGDP.xls");
+PRGDP$DATE <- as.Date(as.yearqtr(PRGDP$observation_date))
+#head(subset(PRGDP, select = c(DATE, GDPPOT)))
+Y = nrow(PRGDP)
+```
+\begin{equation*}\Delta y^N_t = log(Y_t^N) -log(Y_{t-1}^N) \end{equation*}
+```{r}
+log_P = log(PRGDP$GDPPOT)
+delta_PRGDP= data.frame(
+DATE = PRGDP$DATE,
+delta_PRGDP = c(NA, diff(log_P,1))
+)
+#head(delta_PRGDP)
+```
+### Output Gap
+Real Gross Domestic Product (GDPC1)
+Billions of Chained 2012 Dollars, Seasonally Adjusted Annual Rate, Frequency:Quarterly
+```{r}
+RGDP = read_excel("RGDP.xls")
+#head(RGDP)
+RGDP$DATE <- as.Date(as.yearqtr(RGDP$observation_date))
+#head(subset(RGDP, select = c(DATE, GDPC1 )))
+Y = nrow(RGDP)
+
+```
+
+\begin{equation*}x_t = log(Y_{t})-log(Y_t^N)  \end{equation*}
+```{r}
+
+new_frame  <- merge(RGDP,PRGDP,by=c("DATE"))
+new_frame$Output_Gap = log(new_frame$GDPC1)-log(new_frame$GDPPOT)
+Output_Gap = data.frame(
+  DATE = new_frame$DATE,
+  Gap = new_frame$Output_Gap
+)
+#head(Output_Gap)
+```
+
+### Inflation
+Gross Domestic Product: Implicit Price Deflator (GDPDEF)
+Index 2012=100, Seasonally Adjusted, Frequency:Quarterly
+```{r}
+GDPDEF=read_excel("GDPDEF.xls");
+GDPDEF$DATE <- as.Date(as.yearqtr(GDPDEF$observation_date))
+GDPDEF$log_GDPDEF=log(GDPDEF$GDPDEF)
+GDPDEF$inflation = c(NA, diff(GDPDEF$log_GDPDEF, lag = 1))
+#head(GDPDEF)
+```
+
+### Data Frame
+```{r}
+temporary_frame  <- merge(GDPDEF,Output_Gap,by=c("DATE"))
+temporary_frame  <- merge(temporary_frame,delta_PRGDP,by=c("DATE"))
+
+realized_variables= data.frame(
+  t = temporary_frame$DATE,
+  inflation = temporary_frame$inflation,
+  delta_natural_output = temporary_frame$delta_PRGDP,
+  output_gap = temporary_frame$Gap)
+
+head(realized_variables, 6)
+```
+## Instruments
+```{r}
+      lagpad <- function(x, k) {
+        if (k>0) {
+          return (c(rep(NA, k), x)[1 : length(x)] );
+        }
+        else {
+          return (c(x[(-k+1) : length(x)], rep(NA, -k)));
+        }
+      }
+        
+  
+
+  Z1= data.frame(
+  t = realized_variables$t,
+  constant = matrix(1,nrow(realized_variables),1),
+  Output_Gap_lag1 = lagpad(realized_variables$output_gap,1),
+  Output_Gap_lag2 = lagpad(realized_variables$output_gap,2),
+  Output_Gap_lag3 = lagpad(realized_variables$output_gap,3))
+  
+  Z2 = data.frame(
+    t = expectations_inflation$t,
+    inflation_instrument = lagpad(expectations_inflation$expectations_inflation_less2,-1)  
+    )
+  
+  Z  <- merge(Z1,Z2,by=c("t"))
+  head(Z,6)
+
+```
+
+## Survey of Data
+```{r}
+Final_Frame  <- merge(realized_variables,expectations_change_output,by=c("t"))
+Final_Frame  <- merge(Final_Frame,expectations_inflation,by=c("t"))
+Final_Frame  <- merge(Final_Frame,Z,by=c("t"))
+
+MyData= Final_Frame[complete.cases(Final_Frame), ] # Removes NA
+head(MyData, 6)
+
+plot(Final_Frame$t,Final_Frame$inflation, main = "Inflation", type = "l")
+plot(Final_Frame$t,Final_Frame$output_gap, main = "Output Gap", type = "l")
+
+
+save(MyData,file="MyData.Rda") 
+```
+
+
