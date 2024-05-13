@@ -13,5 +13,5 @@ This repository contains the files and data related to the research paper titled
 
 ## Data
 1. **MyData.Rda**: This R data file contains the processed data used in the analysis. 
-2. **Raw data**: This folder contains preprocessed data that can be found online and an RMD file to process the data. 
+
 
