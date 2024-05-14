@@ -1,4 +1,4 @@
-# Time Variation in the Sticky Information Phillips Curve Research
+# Time Variation in the Sticky Information Phillips Curve
 
 ## Overview
 This repository contains the files and data related to the research paper titled "Time Variation in the Sticky Information Phillips Curve." The paper explores the dynamics of inflation using a Sticky Information Phillips Curve (SIPC).
