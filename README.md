@@ -15,3 +15,5 @@ This repository contains the files and data related to the research paper titled
 1. **MyData.Rda**: This R data file contains the processed data used in the analysis. 
 
 
+## Keywords
+Nonlinear Estimation, Bayesian Statistics, Aggregate Price Model, R
