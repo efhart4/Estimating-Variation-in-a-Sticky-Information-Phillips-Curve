@@ -1,7 +1,8 @@
 # Time Variation in the Sticky Information Phillips Curve
 
 ## Overview
-This repository contains the files and data related to the research paper titled "Time Variation in the Sticky Information Phillips Curve." The paper explores the dynamics of inflation using a Sticky Information Phillips Curve (SIPC).
+In this research, I investigate the empirical evidence of structural parameter variation within the sticky information model, exploring both the statistical significance and economic implications of changing attention patterns among firms. Using survey data from the survey of professional forecasters, collected by the Philadelphia Federal Reserve, I estimate models capturing firms’ attention to macroeconomic conditions, uncovering a systematic decline in attention over time. This decline is linked to a reduction in the expected volatility of prices. Through Bayesian model comparison, I assess the performance of fixed and time-varying attention models, finding that while a fixed parameter model is favored, the time-varying model still holds relevance.
+
 
 ## Research Paper
 1. **Time Variation in the Sticky Information Phillips Curve.pdf**: This is the main research paper in PDF format. It contains detailed findings, analysis, and conclusions regarding the time variation in the SIPC.
