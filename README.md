@@ -7,7 +7,7 @@ This repository contains the files and data related to the research paper titled
 1. **Time Variation in the Sticky Information Phillips Curve.pdf**: This is the main research paper in PDF format. It contains detailed findings, analysis, and conclusions regarding the time variation in the SIPC.
 
 ## Presentaion File for Data Processing
-1. **https://html-preview.github.io/?url=https://github.com/efhart4/Estimating-Variation-in-a-Sticky-Information-Phillips-Curve/blob/main/Data/Data-Preparation.html
+1. https://html-preview.github.io/?url=https://github.com/efhart4/Estimating-Variation-in-a-Sticky-Information-Phillips-Curve/blob/main/Data/Data-Preparation.html
 
 ## R Scripts for Estimation
 1. **Metropolis Hasting Sampler.R**: This R script utilizes the Metropolis-Hastings Sampler to estimate the parameters of both fixed and time-varying models. It employs a joint likelihood approach to account for an endogenous variable.
