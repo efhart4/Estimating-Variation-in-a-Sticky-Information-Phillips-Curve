@@ -5,7 +5,7 @@ In this research, I investigate the empirical evidence of structural parameter v
 
 
 ## Research Paper
-1. **Time Variation in the Sticky Information Phillips Curve.pdf
+1. **Time Variation in the Sticky Information Phillips Curve.pdf**
 
 ## Data Processing
 1. https://html-preview.github.io/?url=https://github.com/efhart4/Estimating-Variation-in-a-Sticky-Information-Phillips-Curve/blob/main/Data/Data-Preparation.html
